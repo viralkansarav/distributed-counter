@@ -88,5 +88,33 @@ The new node fetches the latest counter value.
 It is added to the peer list and notified to all other peers.
 
 
+🔹 Increment Counter (Triggers Propagation)
+```sh
+curl -X POST http://localhost:8000/increment -H "Content-Type: application/json" -d '{"node_id":"localhost:8000"}'
+```
+✅ Response:
 
+```sh
+200 OK
+```
+
+✅ Behavior:
+
+This increments the counter at 8000.
+The increment propagates to all peers (8001, 8002, etc.).
+If a peer is offline, the update is retried with backoff.
+🔹 Get Current Counter Value
+```sh
+curl -X GET http://localhost:8000/count
+```
+
+✅ Response:
+```json
+{"count": 5}
+```
+
+### Limitations
+❌ Network Overhead: Propagating every increment to all peers can be inefficient for large clusters.
+❌ No Conflict Resolution: If network partitions occur, the highest counter wins when merging.
+❌ No Security Measures: Nodes do not authenticate requests, making them vulnerable to spoofing.
 
