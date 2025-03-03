@@ -125,7 +125,6 @@ func (sd *ServiceDiscovery) HandlePing(w http.ResponseWriter, r *http.Request) {
 
 func (sd *ServiceDiscovery) Heartbeat() {
 	for {
-		time.Sleep(5 * time.Second)
 		sd.mu.Lock()
 		knownPeers := make([]string, 0, len(sd.peers))
 		for peer := range sd.peers {
