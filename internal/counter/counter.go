@@ -37,7 +37,7 @@ func (c *Counter) SetCount(latestValue int) {
 }
 
 // Process increments only once per request
-func (c *Counter) Increment(nodeID string, requestID int) {
+func (c *Counter) Increment(nodeID string, requestID int, incrementCount int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -51,33 +51,42 @@ func (c *Counter) Increment(nodeID string, requestID int) {
 	}
 
 	c.history[nodeID][requestID] = true
-	c.value++
+	c.value += incrementCount
 	log.Printf("Counter incremented by node %s, new value: %d", nodeID, c.value)
 }
 
 // Handle incoming increment requests
 func (c *Counter) HandleIncrement(w http.ResponseWriter, r *http.Request) {
 	var data struct {
-		NodeID string `json:"node_id"`
+		NodeID         string `json:"node_id"`
+		IncrementCount int    `json:"increment_count"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
+	if data.NodeID == "" {
+		json.NewEncoder(w).Encode(map[string]any{"success": false, "error": "Node ID is required"})
+		return
+	}
+	if data.IncrementCount == 0 {
+		json.NewEncoder(w).Encode(map[string]any{"success": false, "error": "Increment must be greater than 1"})
+		return
+	}
 
 	requestID := rand.Intn(1000000)
-	c.Increment(data.NodeID, requestID)
+	c.Increment(data.NodeID, requestID, data.IncrementCount)
 
 	// Propagate increment only if this is the original request
 	if data.NodeID == c.sd.ID {
-		go c.PropagateIncrement(data.NodeID)
+		go c.PropagateIncrement(data.NodeID, data.IncrementCount)
 	}
 
 	json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }
 
 // Propagate increments with exponential backoff
-func (c *Counter) PropagateIncrement(originNode string) {
+func (c *Counter) PropagateIncrement(originNode string, incrementCount int) {
 	peers := c.sd.GetPeers()
 	log.Printf("Propagating increment to peers: %+v", peers)
 
@@ -88,7 +97,7 @@ func (c *Counter) PropagateIncrement(originNode string) {
 
 		go func(p string) {
 			err := backoff.RetryWithBackoff(func() error {
-				data := map[string]string{"node_id": c.sd.ID}
+				data := map[string]any{"node_id": c.sd.ID, "increment_count": incrementCount}
 				body, _ := json.Marshal(data)
 
 				resp, err := http.Post("http://"+p+"/increment", "application/json", bytes.NewBuffer(body))
