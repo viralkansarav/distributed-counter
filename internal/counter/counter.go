@@ -73,7 +73,7 @@ func (c *Counter) HandleIncrement(w http.ResponseWriter, r *http.Request) {
 		go c.PropagateIncrement(data.NodeID)
 	}
 
-	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }
 
 // Propagate increments with exponential backoff
