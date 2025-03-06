@@ -90,7 +90,7 @@ It is added to the peer list and notified to all other peers.
 
 🔹 Increment Counter (Triggers Propagation)
 ```sh
-curl -X POST http://localhost:8000/increment -H "Content-Type: application/json" -d '{"node_id":"localhost:8000"}'
+curl -X POST http://localhost:8000/increment -H "Content-Type: application/json" -d '{"node_id":"localhost:8000","increment_count":10}'
 ```
 ✅ Response:
 
@@ -101,7 +101,7 @@ curl -X POST http://localhost:8000/increment -H "Content-Type: application/json"
 ✅ Behavior:
 
 This increments the counter at 8000.
-The increment propagates to all peers (8001, 8002, etc.).
+The increment count we gave propagates to all peers (8001, 8002, etc.).
 If a peer is offline, the update is retried with backoff.
 🔹 Get Current Counter Value
 ```sh
