@@ -83,6 +83,7 @@ func syncCounterOnStartup(c *counter.Counter, peers []string) {
 func autoJoinCluster(sd *discovery.ServiceDiscovery, nodeID string, knownPeers []string) {
 	for _, peer := range knownPeers {
 		log.Printf("Attempting to join cluster via %s...", peer)
+		peer = strings.TrimSpace(peer)
 
 		data := map[string]string{"id": nodeID}
 		body, _ := json.Marshal(data)
